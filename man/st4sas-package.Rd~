@@ -1,0 +1,88 @@
+\name{st4sas-package}
+\alias{st4sas-package}
+\alias{st4sas}
+\docType{package}
+\title{
+\packageTitle{st4sas}
+}
+\description{
+\packageDescription{st4sas}
+}
+\details{
+
+The DESCRIPTION file:
+\packageDESCRIPTION{st4sas}
+\packageIndices{st4sas}
+}
+\author{
+\packageAuthor{st4sas}
+
+Maintainer: \packageMaintainer{st4sas}
+}
+\references{
+
+}
+\keyword{ Cox, Nelson-Aalen, Breslow, simulations }
+\seealso{
+}
+\examples{
+
+library(survival)
+data(aml)
+
+      # make data.frame object using survfit
+
+  make.cumhaz.matrix <- function(formula, data){
+
+      out <- survfit( formula, data )  #  to get cumhaz apply -log(surv)                        
+        if (!is.null(out$strata)){
+        ncontrol <- out$strata[1]
+        ntrt <- out$strata[2]
+        ntreat <- (ncontrol + 1):(ncontrol + ntrt)
+
+    return(    rbind(
+      data.frame( km = out$surv[1:ncontrol], time = out$time[1:ncontrol], 
+               km_l = out$lower[1:ncontrol], km_u = out$upper[1:ncontrol], trt = 0 ),
+     data.frame( km = out$surv[ntreat], time = out$time[ntreat], km_l = out$lower[ntreat], km_u = out$upper[ntreat], trt = 1 )
+        )  ) # dataframes will need to be trimmed or extended on artificial inferneces ....
+        
+    } else { 
+            return( data.frame( km = out$surv, time = out$time,  km_l = out$lower, km_u = out$upper, trt = NA )  )
+         }
+        
+    }
+
+                                        #
+#
+ formula <- Surv(time, status)~x
+
+     # simulate 100 KM curves via simple bootstrap
+
+set.seed(19685)
+
+MCList <-  lapply(1:100, function(x)
+    make.cumhaz.matrix(formula, aml[sample(1:23, 23, replace = TRUE), ]))
+
+                                        # average
+out <- Average.MC.cumhaz(MCList)
+
+ head(out$mc.average)
+
+out <- out$mc.average
+
+# compute reference "true" KM curve on original data
+
+original <- make.cumhaz.matrix(formula, aml)
+
+ # plot original versus averaged KM curve
+
+par(mfrow = c(1,2))
+ plot(original$time[original$trt == 0], original$km[original$trt == 0], type = "S", main = "Control", ylab = "KM estimate", xlab = "time")
+ points(out$time[out$trt == 0], out$km[out$trt == 0], type = "S", col = "red", lty = 2)
+
+legend("topright", c("true", "averaged"), col = c("black","red"), lty = c(1,2), bty = "n"  )
+ plot(original$time[original$trt == 1], original$km[original$trt == 1], type = "S", main = "Treatment", ylab = "KM estimate", xlab = "time")
+ points(out$time[out$trt == 1], out$km[out$trt == 1], type = "S", col = "red", lty = 2)
+
+
+}

@@ -1,0 +1,15 @@
+Package: st4sas
+Type: Package
+Title: Some tools 4 survival analysis simulations
+Version: 1.0
+Date: 2019-04-07
+Author: Federico Bonofiglio
+Maintainer: Federico Bonofiglio <bonostat@gmx.de>
+Depends: R (>= 3.3.3), maxLik
+Suggests: survival
+URL: https://github.com/bonorico
+Description: Tools to perform ans summarize Cox regression or cumulative hazard estimation with simulated risk-set denominator and (fixed) numerator. Suggested package: https://github.com/bonorico/gcipdr. 
+License: GPL (>= 3) 
+Imports: Rcpp (>= 1.0.0)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 6.1.1
