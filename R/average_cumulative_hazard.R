@@ -3,23 +3,23 @@
 
 ## This file is part of st4sas.
 
-    ## st4sas is free software: you can redistribute it and/or modify
-    ## it under the terms of the GNU General Public License as published by
-    ## the Free Software Foundation, either version 3 of the License, or
-    ## (at your option) any later version.
+## st4sas is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
 
-    ## st4sas is distributed in the hope that it will be useful,
-    ## but WITHOUT ANY WARRANTY; without even the implied warranty of
-    ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    ## GNU General Public License for more details.
+## st4sas is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
 
-    ## You should have received a copy of the GNU General Public License
-    ## along with st4sas.  If not, see <https://www.gnu.org/licenses/>.
-
-
+## You should have received a copy of the GNU General Public License
+## along with st4sas.  If not, see <https://www.gnu.org/licenses/>.
 
 
- 
+
+
+
 
 #' @name count.arm.events
 #' @title Time-events (points) count of a (stratified) Kaplan-Meier (Nelson-Aalen/Breslow) estimate. 
@@ -30,39 +30,39 @@
 
 
 count.arm.events <- function( cumhaz.matrix ){
-       
-     if ( all(!is.na(cumhaz.matrix$trt)) ) {
-     
- nevents <- as.vector( table( cumhaz.matrix$trt ) )  # trt 0 , trt 1  
+    
+    if ( all(!is.na(cumhaz.matrix$trt)) ) {
+        
+        nevents <- as.vector( table( cumhaz.matrix$trt ) )  # trt 0 , trt 1  
 
-    data.frame( N.trt0 = nevents[1], N.trt1 = nevents[2] )
+        data.frame( N.trt0 = nevents[1], N.trt1 = nevents[2] )
 
     } else {
 
-  dim(cumhaz.matrix)[1] # unstratified length
+        dim(cumhaz.matrix)[1] # unstratified length
 
     }
-         
-   
-   }
     
-  
+    
+}
 
 
-# extend curve/time length to pregiven size
+
+
+                                        # extend curve/time length to pregiven size
 
 extend.time.jumps <- function( time, maxn ){
 
-    # set an average jump length
-   mean.dt <- mean( diff(time), na.rm = T ) 
+                                        # set an average jump length
+    mean.dt <- mean( diff(time), na.rm = T ) 
     
-     time.length <- length(time)
+    time.length <- length(time)
     last.time.point <- time[time.length]
-   
+    
     if ( maxn >=  time.length )
-    N.to.add <- maxn - time.length
-   else
-       stop( "maxn is lesser than cumhaz length" )
+        N.to.add <- maxn - time.length
+    else
+        stop( "maxn is lesser than cumhaz length" )
 
     next.last.time <- last.time.point + mean.dt # last time point + mean(dt)
     new.last.timepoint <- last.time.point + ( mean.dt*N.to.add ) # accrue last time point by N times the mean dt
@@ -71,21 +71,21 @@ extend.time.jumps <- function( time, maxn ){
 
     extended.time.line <- c( time, added.time )
 
-  return( extended.time.line )
+    return( extended.time.line )
     
-  } 
+} 
 
-#
+                                        #
 
 extend.cumhaz.values <- function( cumhaz, maxn){
 
- curve.length <- length(cumhaz)
+    curve.length <- length(cumhaz)
     lastvalue <- cumhaz[curve.length]
     
     if ( maxn >=  curve.length )
-    N.to.add <- maxn - curve.length
-   else
-       stop( "maxn is lesser than cumhaz length" )
+        N.to.add <- maxn - curve.length
+    else
+        stop( "maxn is lesser than cumhaz length" )
     
     add.values <- rep( lastvalue, N.to.add )
 
@@ -93,7 +93,7 @@ extend.cumhaz.values <- function( cumhaz, maxn){
 
     return( extended.cumhaz )
     
-  }
+}
 
 
 
@@ -109,55 +109,55 @@ extend.cumhaz.values <- function( cumhaz, maxn){
 Add.jumps.to.cumhaz.matrix <- function( cumhaz.matrix, maxevents ){
 
     
-         K <- length( maxevents )
-              trt.level <- unique(cumhaz.matrix$trt) # 0,1 OR NA. problem if both
-           if ( K != length( trt.level )  )
+    K <- length( maxevents )
+    trt.level <- unique(cumhaz.matrix$trt) # 0,1 OR NA. problem if both
+    if ( K != length( trt.level )  )
         stop( "maxevents strata do not match trt strata" )
 
-  if ( length(trt.level) == 1) {
-    if ( is.na(trt.level) ){
- trt.level <- 1
-      cumhaz.matrix$trt <- is.na(cumhaz.matrix$trt)
-  } }
-              
-# (split-modify-recompose dataset)
-       
-out <- do.call( "rbind",  # recompose
-     lapply( 1:K,
-       function(i){
-      splitdata <- cumhaz.matrix[cumhaz.matrix$trt == trt.level[i], ]
+    if ( length(trt.level) == 1) {
+        if ( is.na(trt.level) ){
+            trt.level <- 1
+            cumhaz.matrix$trt <- is.na(cumhaz.matrix$trt)
+        } }
+    
+                                        # (split-modify-recompose dataset)
+    
+    out <- do.call( "rbind",  # recompose
+                   lapply( 1:K,
+                          function(i){
+                              splitdata <- cumhaz.matrix[cumhaz.matrix$trt == trt.level[i], ]
 
-      ## here you need follow some columns numbering/labelling convention ...
-      
-      data.frame( km = extend.cumhaz.values( splitdata$km, maxevents[i]),
-          time = extend.time.jumps( splitdata$time, maxevents[i] ),
-          km_l = extend.cumhaz.values( splitdata$km_l, maxevents[i]),
-          km_u = extend.cumhaz.values( splitdata$km_u, maxevents[i]),
-                  trt = trt.level[i]  )
-                                            }         )                               
-                        )
-       
+                              ## here you need follow some columns numbering/labelling convention ...
+                              
+                              data.frame( km = extend.cumhaz.values( splitdata$km, maxevents[i]),
+                                         time = extend.time.jumps( splitdata$time, maxevents[i] ),
+                                         km_l = extend.cumhaz.values( splitdata$km_l, maxevents[i]),
+                                         km_u = extend.cumhaz.values( splitdata$km_u, maxevents[i]),
+                                         trt = trt.level[i]  )
+                          }         )                               
+                   )
+    
     return(out)
- 
-   }
+    
+}
 
 
 
 ##
 
-#
+                                        #
 compute.average.curve <- function( extended.km.matrix, extended.time.matrix, extended.km_l.matrix, extended.km_u.matrix, extended.trt ){
     
-  mean.km <- apply( extended.km.matrix, 1, mean, na.rm = T ) # MC average cumhaz
-      mean.time <- apply( extended.time.matrix, 1, mean, na.rm = T )  # MC average time
+    mean.km <- apply( extended.km.matrix, 1, mean, na.rm = T ) # MC average cumhaz
+    mean.time <- apply( extended.time.matrix, 1, mean, na.rm = T )  # MC average time
     mean.km_l <- apply( extended.km_l.matrix, 1, mean, na.rm = T )
-      mean.km_u <- apply( extended.km_u.matrix, 1, mean, na.rm = T ) 
-  averaged.frame <- data.frame( km = mean.km, time = mean.time, km_l = mean.km_l, km_u = mean.km_u, trt = extended.trt )
+    mean.km_u <- apply( extended.km_u.matrix, 1, mean, na.rm = T ) 
+    averaged.frame <- data.frame( km = mean.km, time = mean.time, km_l = mean.km_l, km_u = mean.km_u, trt = extended.trt )
 
     return(averaged.frame)
 
-    }
-#
+}
+                                        #
 
 
 
@@ -175,38 +175,38 @@ compute.average.curve <- function( extended.km.matrix, extended.time.matrix, ext
 Average.MC.cumhaz <- function( MClist ){ # MClist is a list of MC breslow curves
     
                                         # step 0 : count arm-specific events
- nevents <- do.call( "rbind", lapply( MClist, function(x) count.arm.events(x) ) )     
+    nevents <- do.call( "rbind", lapply( MClist, function(x) count.arm.events(x) ) )     
     
-    # step 1 : determine longest curve in MClist, fix maxlength
+                                        # step 1 : determine longest curve in MClist, fix maxlength
 
-       maxNevents <- apply( nevents, 2, max , na.rm = T )
+    maxNevents <- apply( nevents, 2, max , na.rm = T )
     
-    # step 2 : extend shorter curves to maxlenght and fill empty elements with maxcumhaz, and stack into matrix 
+                                        # step 2 : extend shorter curves to maxlenght and fill empty elements with maxcumhaz, and stack into matrix 
     
-  extended.MClist <- lapply( MClist, function(x) Add.jumps.to.cumhaz.matrix( x, maxNevents ) )
+    extended.MClist <- lapply( MClist, function(x) Add.jumps.to.cumhaz.matrix( x, maxNevents ) )
     extended.MClist <- extended.MClist[sapply(extended.MClist, function(x)!is.null(x))]  # drp eventual NULL vals
 
     extended.trt <- extended.MClist[[1]]$trt  # all frames should have equal trt tabulation (NOT TRUE, SOME ARE MISSING) ???? TODO(me) : check this claim ... update: WHAT do u mean ?? (29/06/17)
 
     extended.km <- lapply(extended.MClist, function(x) x$km) 
-      extended.time <- lapply(extended.MClist, function(x) x$time) 
+    extended.time <- lapply(extended.MClist, function(x) x$time) 
     extended.km_l <- lapply(extended.MClist, function(x) x$km_l) 
     extended.km_u <- lapply(extended.MClist, function(x) x$km_u)                                                    
-    # step 3 : compute rowwise averages (average cumhaz)
+                                        # step 3 : compute rowwise averages (average cumhaz)
 
-        averaged.frame <- compute.average.curve( do.call("cbind",extended.km), do.call("cbind",extended.time), do.call("cbind",extended.km_l), do.call("cbind",extended.km_u), extended.trt ) 
-        # step 4 (see below)
+    averaged.frame <- compute.average.curve( do.call("cbind",extended.km), do.call("cbind",extended.time), do.call("cbind",extended.km_l), do.call("cbind",extended.km_u), extended.trt ) 
+                                        # step 4 (see below)
 
-H <- length(extended.MClist)
-sampleNr <- rep(paste("sample", 1:H), rep(length(extended.km[[1]]), H))
+    H <- length(extended.MClist)
+    sampleNr <- rep(paste("sample", 1:H), rep(length(extended.km[[1]]), H))
 
-  raw.samples <- data.frame(km = unlist( extended.km), time = unlist( extended.time), km_l = unlist( extended.km_l), km_u = unlist( extended.km_u), trt = extended.trt, sampleNr =  sampleNr)
+    raw.samples <- data.frame(km = unlist( extended.km), time = unlist( extended.time), km_l = unlist( extended.km_l), km_u = unlist( extended.km_u), trt = extended.trt, sampleNr =  sampleNr)
 
     out <- list( "mc.average" = averaged.frame, # MC average (extended event time- to be chipped)
                 "raw.extended" =  raw.samples  )                                                                                                            
     return( out )
     
-   }
+}
 
 
 

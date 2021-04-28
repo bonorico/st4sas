@@ -3,18 +3,18 @@
 
 ## This file is part of st4sas.
 
-    ## st4sas is free software: you can redistribute it and/or modify
-    ## it under the terms of the GNU General Public License as published by
-    ## the Free Software Foundation, either version 3 of the License, or
-    ## (at your option) any later version.
+## st4sas is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
 
-    ## st4sas is distributed in the hope that it will be useful,
-    ## but WITHOUT ANY WARRANTY; without even the implied warranty of
-    ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    ## GNU General Public License for more details.
+## st4sas is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
 
-    ## You should have received a copy of the GNU General Public License
-    ## along with st4sas.  If not, see <https://www.gnu.org/licenses/>.
+## You should have received a copy of the GNU General Public License
+## along with st4sas.  If not, see <https://www.gnu.org/licenses/>.
 
 
 
@@ -38,10 +38,10 @@
 
 coxlik <- function(y, x, str=1){
 
-         maxLik(lCox,  grad=grCox, hess=hessCox,
-                 start=rep(0.0, length(y)),
-                    y=y, x=x , str=str )
-                 
+    maxLik(lCox,  grad=grCox, hess=hessCox,
+           start=rep(0.0, length(y)),
+           y=y, x=x , str=str )
+    
 }
 
 
@@ -61,90 +61,90 @@ coxlik <- function(y, x, str=1){
 CollectLoglikResults <- function(obj, summary=TRUE){
 
     
-if(class(obj[[1]])[1]=="maxLik")
-    
-res <- do.call("rbind",
-
-    lapply(obj , function(x){
-
-      beta <- if(!is.null(x$est)){
-                    x$est
-                    }else{
-                        NA }  # fix here must return NA of correct length
-        N <- length(beta)
-    max <- ifelse(!is.null(x$max),
-                    x$max, NA )
+    if(class(obj[[1]])[1]=="maxLik")
         
-        hess <-
-            try( -solve(x$hess), T  ) 
+        res <- do.call("rbind",
 
-      vbeta <- if( class(hess)=="try-error"){
-            rep(NA,N)
-       }else{
-         diag(hess) 
-    }
+                       lapply(obj , function(x){
 
-     aic <- 2*length(beta) - 2*max
+                           beta <- if(!is.null(x$est)){
+                                       x$est
+                                   }else{
+                                       NA }  # fix here must return NA of correct length
+                           N <- length(beta)
+                           max <- ifelse(!is.null(x$max),
+                                         x$max, NA )
+                           
+                           hess <-
+                               try( -solve(x$hess), T  ) 
 
-     low <- beta - 1.96*sqrt(vbeta)
- up <- beta + 1.96*sqrt(vbeta)
+                           vbeta <- if( class(hess)=="try-error"){
+                                        rep(NA,N)
+                                    }else{
+                                        diag(hess) 
+                                    }
 
-        data.frame(beta=t(beta),
-                      vbeta=
-                      t( vbeta  ),
-                    low = t(low),
-                   up=t(up),
-                   max=t(max),
-                   aic = t(aic)
-                      )
-       }
-     )    )
+                           aic <- 2*length(beta) - 2*max
 
-else  # LM
+                           low <- beta - 1.96*sqrt(vbeta)
+                           up <- beta + 1.96*sqrt(vbeta)
+
+                           data.frame(beta=t(beta),
+                                      vbeta=
+                                          t( vbeta  ),
+                                      low = t(low),
+                                      up=t(up),
+                                      max=t(max),
+                                      aic = t(aic)
+                                      )
+                       }
+                       )    )
+
+    else  # LM
+        
+        res <- do.call("rbind",
+                       lapply(obj , function(x){
+                           
+                           vbeta <- ifelse(x$vbeta<0, NA, x$vbeta)
+                           aic <- ifelse(is.nan(x$aic), NA, x$aic)
+                           low <- ifelse(is.nan(x$low), NA, x$low)
+                           up <- ifelse(is.nan(x$up), NA, x$up)
+                           max <- ifelse(is.nan(x$max), NA, x$max)
+                           data.frame(beta= t(x$beta),
+                                      vbeta= t( vbeta  ),                   
+                                      low = t(low),
+                                      up=t(up),
+                                      max=t(max),
+                                      aic = t(aic))
+                       }
+                       )  )  
     
-    res <- do.call("rbind",
-    lapply(obj , function(x){
- 
-  vbeta <- ifelse(x$vbeta<0, NA, x$vbeta)
-    aic <- ifelse(is.nan(x$aic), NA, x$aic)
-            low <- ifelse(is.nan(x$low), NA, x$low)
-                    up <- ifelse(is.nan(x$up), NA, x$up)
-                    max <- ifelse(is.nan(x$max), NA, x$max)
-        data.frame(beta= t(x$beta),
-                      vbeta= t( vbeta  ),                   
-                   low = t(low),
-                   up=t(up),
-                   max=t(max),
-                   aic = t(aic))
-   }
-          )  )  
-                   
-sumres <- NULL
+    sumres <- NULL
     if(summary){
 
 
-       MCerr <- apply(res, 2, sd, na.rm=TRUE)
+        MCerr <- apply(res, 2, sd, na.rm=TRUE)
         
         
- MCmean <- apply(res, 2, mean, na.rm=TRUE)
+        MCmean <- apply(res, 2, mean, na.rm=TRUE)
 
-sumres <- rbind(MCerr, #  MCmode,
-                MCmean )
-  rownames(sumres) <- c("var", #  "mode",
-                        "mean")
-      
-  }
+        sumres <- rbind(MCerr, #  MCmode,
+                        MCmean )
+        rownames(sumres) <- c("var", #  "mode",
+                              "mean")
+        
+    }
 
-output <- list("mc"=as.data.frame(res),
-               "mcsum"=as.data.frame(sumres))
+    output <- list("mc"=as.data.frame(res),
+                   "mcsum"=as.data.frame(sumres))
     output
-   }
+}
 
 
 
 
-                 
-             
+
+
 
 
 
